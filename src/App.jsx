@@ -1,18 +1,19 @@
 // Importing necessary hooks from React and the Search component
 import { useEffect, useState } from "react";
-import Search from "../components/Search";
+import Search from "./components/Search";
+import Spinner from "./components/Spinner";
 
 // Base URL for the TMDB API
 const API_URL = "https://api.themoviedb.org/3/discover/movie";
 // API key is retrieved from environment variables for security
 const API_KEY = import.meta.env.API_TMBD_KEY;
-const url_key=import.meta.env.API_KEY
+const url_key = import.meta.env.API_KEY;
 
 // API options for making requests, including headers for authorization
 const API_OPTIONS = {
-  method: 'GET',
+  method: "GET",
   headers: {
-    accept: 'application/json',
+    accept: "application/json",
     Authorization: `Bearer ${API_KEY}`,
   },
 };
@@ -21,10 +22,15 @@ function App() {
   // State to manage the search term entered by the user
   const [SearchTerm, setSearchTerm] = useState("");
   const [catchError, setcatchError] = useState("");
+  const [moveielist, setmoveielist] = useState([]);
+  const [isLoading, setisLoading] = useState(false);
 
   // Function to fetch movies from the TMDB API
   const fetchingmovies = async () => {
     try {
+      setisLoading(true);
+      setcatchError("");
+
       // Build the full API URL with API key and sort parameter
       const base_url = `${API_URL}?api_key=7a9cd2a23b5b108504b93f436bd2c3b3&sort_by=popularity.desc`;
       // Call the API using fetch and wait for the response
@@ -38,16 +44,20 @@ function App() {
         const data = await response.json();
         console.log(data); // Log the actual data we got from the API
         // If the API didn't send a proper response field, show an error message
-        if (data.response== false) {
+        if (data.response == false) {
           // Set an error message, use message from API if available
           setcatchError(data.error || "failed to fetch movies");
+          // TODO: learn api use again
         }
+        setmoveielist(data.results || []);
       }
     } catch (error) {
       // If any error occurs in the try block, it will be caught here
       console.log(`Error for Fetching : ${error}`); // Log the error for debugging
       // Show a user-friendly error message on the UI
       setcatchError("error occured while fetching movie try again");
+    } finally {
+      setisLoading(false);
     }
   };
 
@@ -74,8 +84,20 @@ function App() {
             <h1 className="text-white text-sm"> {SearchTerm} </h1>
           </header>
           <section className="all-movies">
-            <h2>ALL MOVIES</h2>
-            {catchError && <p className="text-red-400">{catchError}</p>}
+            <h2 className="mt-[50px]">ALL MOVIES</h2>
+            {isLoading ? (
+              <Spinner />
+            ) : catchError ? (
+              <p>{catchError}</p>
+            ) : (
+              <ul>
+                {moveielist.map((movie) => (
+                  <p key={movie.id} className="text-white">
+                    {movie.title}
+                  </p>
+                ))}
+              </ul>
+            )}
           </section>
           {/* Search component to handle user input for movie search */}
           {/* Displaying the current search term for debugging or user feedback */}
